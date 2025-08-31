@@ -6,10 +6,9 @@ class CustomUserManager(BaseUserManager):
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
-        user.save(using=self._db) # ডাটাবেজে স্টোর করার জন্য 
+        user.save(using=self._db) 
         return user
     def create_superuser(self, email, password=None, **extra_fields):
-        #সুপার ইউজারে এই ২টি ফিল্ড থাকে।
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
         
