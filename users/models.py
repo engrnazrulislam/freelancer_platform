@@ -11,6 +11,7 @@ class User(AbstractUser):
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     SELLER = 'Seller'
     BUYER = 'Buyer'
+    ADMIN = 'Admin'
     ROLE_CHOICES = (
         (SELLER, 'Seller'),
         (BUYER, 'Buyer'),

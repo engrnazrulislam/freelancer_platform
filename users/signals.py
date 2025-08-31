@@ -8,9 +8,15 @@ User = get_user_model()
 @receiver(post_save, sender=User)
 def assign_group(sender, instance, created, **kwargs):
     if created:
-        if instance.role == 'seller':
-            group, _ = Group.objects.get_or_create(name='Seller')
-            instance.groups.add(group)
-        elif instance.role == 'buyer':
-            group, _ = Group.objects.get_or_create(name='Buyer')
-            instance.groups.add(group)
+        if instance.role == 'Seller':
+            try:
+                group = Group.objects.get(name='Seller')
+                instance.groups.add(group)
+            except Group.DoesNotExist:
+                raise ValueError("Seller Group Does Not Exist")
+        elif instance.role == 'Buyer':
+            try:
+                group = Group.objects.get(name='Buyer')
+                instance.groups.add(group)
+            except Group.DoesNotExist:
+                raise ValueError("Buyer Group Does Not Exist")
