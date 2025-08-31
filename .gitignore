@@ -1,0 +1,3 @@
+.freelancer_env/
+db.sqlite3
+.env
