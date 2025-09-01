@@ -28,7 +28,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'djoser',
+    'api',
     'users',
+    'services',
+    'orders',
+    'dashboard',
+    'payments',
     'debug_toolbar',
 ]
 
