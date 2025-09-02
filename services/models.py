@@ -17,7 +17,7 @@ class Service(models.Model):
     title = models.CharField(max_length=250)
     description = models.TextField(blank=True, null=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category_services')
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='category_services', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     delivery_time = models.PositiveIntegerField(help_text='Delivery Times in Days')
@@ -25,3 +25,17 @@ class Service(models.Model):
     
     def __str__(self):
         return self.title
+
+class ServiceReview(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
+    service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='service_reviews')
+    buyer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='buyer_reviews')
+    rating = models.PositiveIntegerField()
+    review = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ('service', 'buyer')
+
+    def __str__(self):
+        return f"{self.buyer} -> {self.service} ({self.rating})"
