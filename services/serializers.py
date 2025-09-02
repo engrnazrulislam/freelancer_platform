@@ -13,10 +13,20 @@ class ServiceSerializer(serializers.ModelSerializer):
         source='category',
         write_only=True
     )
+    related_services = serializers.SerializerMethodField()
     class Meta:
         model = Service
-        fields = ['id','seller','title','description','price','category','category_id','created_at','updated_at','delivery_time']
+        fields = ['id','seller','title','description','price','category','category_id','created_at','updated_at','delivery_time','related_services']
         read_only_fields = ['seller','created_at','updated_at']
+
+    def get_related_services(self, obj):
+        related = obj.related_services()
+        return ServiceRelatedSerializer(related, many=True).data
+
+class ServiceRelatedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Service
+        fields = ['id', 'title', 'price']
 
 class ServiceReviewSerializer(serializers.ModelSerializer):
     buyer_name = serializers.CharField(source='buyer.get_full_name', read_only=True)

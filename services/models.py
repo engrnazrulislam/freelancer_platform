@@ -22,6 +22,11 @@ class Service(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     delivery_time = models.PositiveIntegerField(help_text='Delivery Times in Days')
     is_active = models.BooleanField(default=True) 
+
+    def related_services(self):
+        return Service.objects.filter(
+            category=self.category
+        ).exclude(id=self.id)[:5]
     
     def __str__(self):
         return self.title

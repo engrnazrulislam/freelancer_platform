@@ -4,9 +4,11 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
 # from users.views import UserViewSet
 from services.views import ServiceViewset, CategoryViewset, ServiceReviewViewset
+from orders.views import OrderViewSet
 router = DefaultRouter()
 router.register('services', ServiceViewset, basename='services')
 router.register('categories',CategoryViewset, basename='categories')
+router.register('orders', OrderViewSet, basename='orders')
 
 services_router = routers.NestedDefaultRouter(router, 'services', lookup='service')
 services_router.register('reviews', ServiceReviewViewset, basename='reviews')
