@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested import routers
-from services.views import ServiceViewset, CategoryViewset, ServiceReviewViewset
+from services.views import ServiceViewset, CategoryViewset, ServiceReviewViewset, ServiceImageViewSet
 from orders.views import OrderViewSet
 from dashboard import views
 router = DefaultRouter()
@@ -18,6 +18,7 @@ router.register("buyer/dashboard", views.BuyerDashboardViewSet, basename="buyer-
 #Nested Routers
 services_router = routers.NestedDefaultRouter(router, 'services', lookup='service')
 services_router.register('reviews', ServiceReviewViewset, basename='reviews')
+services_router.register('images', ServiceImageViewSet, basename='service-images')
 
 urlpatterns = [
     path('', include(router.urls)),

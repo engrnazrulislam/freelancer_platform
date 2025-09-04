@@ -1,5 +1,14 @@
 from rest_framework import serializers
-from services.models import Service, Category, ServiceReview
+from services.models import Service, Category, ServiceReview, ServiceImage
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+class SimpleUserSerializer(serializers.ModelSerializer):
+    name  = serializers.SerializerMethodField(method_name='get_current_user_name')
+    class Meta:
+        model = User
+        fields = ['id','name']
+        
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,16 +34,24 @@ class ServiceRelatedSerializer(serializers.ModelSerializer):
         fields = ['id', 'title', 'price']
 
 class ServiceReviewSerializer(serializers.ModelSerializer):
-    buyer_name = serializers.SerializerMethodField(method_name='get_buyer_name')
+    buyer_name = serializers.SerializerMethodField(method_name='get_buyer')
     class Meta:
         model = ServiceReview
         fields = ['id','buyer','buyer_name','rating','review','created_at']
         read_only_fields = ['buyer', 'created_at']
 
-        def get_buyer_name(self, obj):
-            if obj.buyer:
-                return obj.buyer.get_full_name() or obj.buyer.email
-            return None
+        def get_buyer(self, obj):
+            return SimpleUserSerializer(obj.user).data
+        
+        def create(self, validated_data):
+            service_id = self.context['service_id']
+            review = ServiceReview.objects.create(service_id=service_id, **validated_data)
+            return review
+
+        # def get_buyer_name(self, obj):
+        #     if obj.buyer:
+        #         return obj.buyer.get_full_name() or obj.buyer.email
+        #     return None
 
 class ServiceDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
@@ -51,3 +68,8 @@ class ServiceDetailSerializer(serializers.ModelSerializer):
         if obj.seller:
             return obj.seller.get_full_name() or obj.seller.email
         return None
+
+class ServiceImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ServiceImage
+        fields = ['id','image']

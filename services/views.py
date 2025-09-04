@@ -1,8 +1,8 @@
 from django.shortcuts import render
 from django.db.models import Count
 from rest_framework import viewsets
-from services.models import Service, Category, ServiceReview
-from services.serializers import ServiceSerializer, CategorySerializer, ServiceDetailSerializer, ServiceReviewSerializer
+from services.models import Service, Category, ServiceReview, ServiceImage
+from services.serializers import ServiceSerializer, CategorySerializer, ServiceDetailSerializer, ServiceReviewSerializer, ServiceImageSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import OrderingFilter, SearchFilter
 from services.filters import ServiceFilter
@@ -39,11 +39,26 @@ class ServiceReviewViewset(viewsets.ModelViewSet):
     serializer_class = ServiceReviewSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+    
+    def perform_update(self, serializer):
+        serializer.save(user=self.request.user)
+
     def get_queryset(self):
         return ServiceReview.objects.filter(service_id=self.kwargs['service_pk'])
+
+    def get_serializer_context(self):
+        return {'service_id': self.kwargs['service_pk']}
+
+class ServiceImageViewSet(viewsets.ModelViewSet):
+    serializer_class = ServiceImageSerializer
     
+    def get_queryset(self):
+        return ServiceImage.objects.filter(service_id=self.kwargs['service_pk'])
+        
     def perform_create(self, serializer):
-        serializer.save(buyer=self.request.user, service_id=self.kwargs['service_pk'])
+        serializer.save(service_id=self.kwargs['service_pk'])
 
 class CategoryViewset(viewsets.ModelViewSet):
     queryset = Category.objects.all()
