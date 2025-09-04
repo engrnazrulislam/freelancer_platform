@@ -9,29 +9,23 @@ class SimpleUserSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id','name']
         
-
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'description']
 
+class ServiceImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
+    class Meta:
+        model = ServiceImage
+        fields = ['id','image']
+
 class ServiceSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
-    category_id = serializers.PrimaryKeyRelatedField( queryset=Category.objects.all(), source='category', write_only=True )
-    related_services = serializers.SerializerMethodField(method_name='get_related_services')
+    images = ServiceImageSerializer(many=True, read_only=True)
     class Meta:
         model = Service
-        fields = ['id','seller','title','description','price','category','category_id','created_at','updated_at','delivery_time','related_services']
+        fields = ['id','seller','title','description','images','price','category','created_at','updated_at','delivery_time']
         read_only_fields = ['seller','created_at','updated_at']
-    
-    def get_related_services(self, obj):
-        related = obj.related_services()
-        return ServiceRelatedSerializer(related, many=True).data
-    
-class ServiceRelatedSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Service
-        fields = ['id', 'title', 'price']
 
 class ServiceReviewSerializer(serializers.ModelSerializer):
     buyer_name = serializers.SerializerMethodField(method_name='get_buyer')
@@ -41,22 +35,19 @@ class ServiceReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ['buyer', 'created_at']
 
         def get_buyer(self, obj):
-            return SimpleUserSerializer(obj.user).data
+            if obj.buyer:
+                return obj.buyer.get_full_name() or obj.buyer.email
+            return None
         
         def create(self, validated_data):
             service_id = self.context['service_id']
             review = ServiceReview.objects.create(service_id=service_id, **validated_data)
             return review
 
-        # def get_buyer_name(self, obj):
-        #     if obj.buyer:
-        #         return obj.buyer.get_full_name() or obj.buyer.email
-        #     return None
-
 class ServiceDetailSerializer(serializers.ModelSerializer):
     category = CategorySerializer(read_only=True)
     reviews = ServiceReviewSerializer(many=True, read_only=True)
-    seller_name = serializers.SerializerMethodField(method_name='get_seller_name')
+    seller_name = serializers.SerializerMethodField(method_name='get_seller')
 
     class Meta:
         model = Service
@@ -64,12 +55,8 @@ class ServiceDetailSerializer(serializers.ModelSerializer):
             'id', 'seller', 'seller_name', 'title', 'description', 
             'price', 'category', 'delivery_time', 'reviews', 'created_at', 'updated_at'
         ]
-    def get_seller_name(self, obj):
-        if obj.seller:
-            return obj.seller.get_full_name() or obj.seller.email
-        return None
+    def get_seller(self, obj):
+            if obj.seller:
+                return obj.buyer.get_full_name() or obj.seller.email
+            return None
 
-class ServiceImageSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = ServiceImage
-        fields = ['id','image']

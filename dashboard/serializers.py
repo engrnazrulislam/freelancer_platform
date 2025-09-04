@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from orders.models import Order
 from services.models import Service, ServiceReview
+from orders.serializers import OrderSerializer
+from services.serializers import ServiceReviewSerializer
+
 
 class SellerServiceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -30,3 +33,19 @@ class BuyerReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceReview
         fields = ["id", "service_title", "rating", "review"]
+
+class SellerDashboardSerializer(serializers.Serializer):
+    total_services = serializers.IntegerField()
+    total_orders = serializers.IntegerField()
+    completed_orders = serializers.IntegerField()
+    total_earnings = serializers.DecimalField(max_digits=10, decimal_places=2)
+    services = SellerServiceSerializer(many=True)
+    orders = OrderSerializer(many=True)
+    reviews = ServiceReviewSerializer(many=True)
+
+class BuyerDashboardSerializer(serializers.Serializer):
+    total_orders = serializers.IntegerField()
+    completed_orders = serializers.IntegerField()
+    total_spent = serializers.DecimalField(max_digits=10, decimal_places=2)
+    orders = BuyerOrderSerializer(many=True)
+    reviews = BuyerReviewSerializer(many=True)

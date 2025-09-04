@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'drf_yasg',
     'rest_framework',
     'django_filters',
     'djoser',
@@ -165,3 +166,14 @@ EMAIL_PORT = config('EMAIL_PORT')  # Common port for TLS (587) or SSL (465)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS')  # Set to True if your SMTP server requires TLS encryption
 EMAIL_HOST_USER = config('EMAIL_HOST_USER')  # Your email address for authentication
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')  # Your email password or app-specific password
+
+SWAGGER_SETTINGS = {
+    'SECURITY_DEFINITIONS': {
+    'Bearer': {
+        'type': 'apiKey',
+        'name': 'Authorization',
+        'in': 'header',
+        'description': 'Enter your JWT Token in the format JWT <yourtoken>',
+        }
+    }
+}

@@ -25,16 +25,15 @@ class Service(models.Model):
     delivery_time = models.PositiveIntegerField(help_text='Delivery Times in Days')
     is_active = models.BooleanField(default=True) 
 
-    def related_services(self):
-        return Service.objects.filter(
-            category=self.category
-        ).exclude(id=self.id)[:5]
-    
+    class Meta:
+            ordering = ['-id',]
+
     def __str__(self):
         return self.title
     
 # Model for Product Image
 class ServiceImage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to="products/images/",validators=[validate_file_size])
 

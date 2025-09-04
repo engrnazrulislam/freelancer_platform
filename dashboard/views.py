@@ -9,11 +9,13 @@ from orders.models import Order
 from dashboard import serializers
 from users.serializers import UserSerializer
 from django.contrib.auth import get_user_model
+
 User = get_user_model()
 
-class SellerDashboardViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.SellerServiceSerializer
+# Seller Dashboard
+class SellerDashboardViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [IsAuthenticated]
+    serializer_class = serializers.SellerServiceSerializer
 
     def get_queryset(self):
         return Service.objects.filter(seller=self.request.user)
@@ -24,45 +26,29 @@ class SellerDashboardViewSet(viewsets.ModelViewSet):
         services = Service.objects.filter(seller=seller)
         orders = Order.objects.filter(seller=seller)
         completed_orders = orders.filter(status=Order.COMPLETED)
-        earnings = calculate_earnings(completed_orders)
         reviews = ServiceReview.objects.filter(service__seller=seller)
 
-        def calculate_earnings(orders_queryset):
-            result = orders_queryset.aggregate(Sum("service__price"))
-            total = result.get("service__price__sum")
-            if total is None:
-                return Decimal("0")
-            return total
+        total_earnings = completed_orders.aggregate(
+            total=Sum("service__price")
+        )["total"] or Decimal("0")
 
         data = {
-            "total_services": services.count(),
-            "total_orders": orders.count(),
-            "completed_orders": completed_orders.count(),
-            "total_earnings": earnings,
-            "services": serializers.SellerServiceSerializer(services, many=True).data,
-            "orders": [
-                {
-                    "id": str(order.id),
-                    "service": order.service.title,
-                    "buyer": order.buyer.email,
-                    "status": order.status,
-                } for order in orders
-            ],
-            "reviews": [
-                {
-                    "id": str(review.id),
-                    "service": review.service.title,
-                    "rating": review.rating,
-                    "review": review.review,
-                    "buyer": review.buyer.email,
-                } for review in reviews
-            ],
-        }
-        return Response(data)
+                "total_services": services.count(),
+                "total_orders": orders.count(),
+                "completed_orders": completed_orders.count(),
+                "total_earnings": total_earnings,
+                "services": services,
+                "orders": orders,
+                "reviews": reviews,
+            }
 
+        serializer = serializers.SellerDashboardSerializer(data)
+        return Response(serializer.data)
+
+# Seller Profile
 class SellerProfileViewSet(viewsets.ModelViewSet):
-    serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
 
     def get_queryset(self):
         return User.objects.filter(id=self.request.user.id)
@@ -71,19 +57,12 @@ class SellerProfileViewSet(viewsets.ModelViewSet):
         return self.request.user
 
 
-class SellerServiceViewSet(viewsets.ModelViewSet):
-    serializer_class = serializers.SellerServiceSerializer
-    permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        return Service.objects.filter(seller=self.request.user)
+# Buyer Dashboard
 
-    def perform_create(self, serializer):
-        serializer.save(seller=self.request.user)
-#Buyer Section
 class BuyerDashboardViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = serializers.BuyerOrderSerializer
     permission_classes = [IsAuthenticated]
+    serializer_class = serializers.BuyerOrderSerializer
 
     def get_queryset(self):
         return Order.objects.filter(buyer=self.request.user)
@@ -93,36 +72,30 @@ class BuyerDashboardViewSet(viewsets.ReadOnlyModelViewSet):
         buyer = request.user
         orders = Order.objects.filter(buyer=buyer)
         completed_orders = orders.filter(status=Order.COMPLETED)
-        spent = calculate_total_spent(completed_orders)
         reviews = buyer.buyer_reviews.all()
 
-        def calculate_total_spent(orders_queryset):
-            result = orders_queryset.aggregate(Sum("service__price"))
-            total = result.get("service__price__sum")
-            if total is None:
-                return Decimal("0")
-            return total
+        total_spent = completed_orders.aggregate(
+            total=Sum("service__price")
+        )["total"] or Decimal("0")
 
         data = {
             "total_orders": orders.count(),
             "completed_orders": completed_orders.count(),
-            "total_spent": spent,
-            "orders": [
-                {
-                    "id": str(order.id),
-                    "service": order.service.title,
-                    "seller": order.seller.email,
-                    "status": order.status,
-                    "price": order.service.price,
-                } for order in orders
-            ],
-            "reviews": [
-                {
-                    "id": str(review.id),
-                    "service": review.service.title,
-                    "rating": review.rating,
-                    "review": review.review,
-                } for review in reviews
-            ],
+            "total_spent": total_spent,
+            "orders": orders,
+            "reviews": reviews,
         }
-        return Response(data)
+        serializer = serializers.BuyerDashboardSerializer(data)
+        return Response(serializer.data)
+
+
+# Buyer Profile
+class BuyerProfileViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    serializer_class = UserSerializer
+
+    def get_queryset(self):
+        return User.objects.filter(id=self.request.user.id)
+
+    def get_object(self):
+        return self.request.user

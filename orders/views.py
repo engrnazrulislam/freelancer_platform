@@ -1,63 +1,92 @@
-from django.shortcuts import render
+from rest_framework import viewsets, serializers
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework import viewsets, permissions
 from orders.models import Order
 from orders.serializers import OrderSerializer
-from rest_framework import serializers
-# Create your views here.
+from drf_yasg.utils import swagger_auto_schema
+
+
 class OrderViewSet(viewsets.ModelViewSet):
-    queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
-    def perform_create(self, serializer):
-        service = serializer.validated_data['service']
+    def get_user_role(self):
+        """Return user role in uppercase (BUYER, SELLER, ADMIN)."""
+        return getattr(self.request.user, "role", "").upper()
+
+    def get_queryset(self):
+        """Return queryset filtered by role:
+        - Admin → All orders
+        - Buyer → Own orders
+        - Seller → Orders related to their services
+        """
         user = self.request.user
-        role = getattr(user, "role", "").upper() 
+        role = getattr(user, "role", "").upper()
 
+        qs = Order.objects.all().select_related("buyer","seller","service")
+
+        if user.is_staff or role == "ADMIN":
+            return qs
         if role == "BUYER":
+            return qs.filter(buyer=user)
+        if role == "SELLER":
+            return qs.filter(seller=user)
+        return Order.objects.none()
+
+    def can_user_modify_order(self, order):
+        """Return allowed actions for this user"""
+        role = self.get_user_role()
+        user = self.request.user
+        return {
+            "is_buyer": role=="BUYER" and order.buyer==user,
+            "is_seller": role=="SELLER" and order.seller==user,
+            "is_admin": role=="ADMIN" or user.is_staff
+        }
+    @swagger_auto_schema(
+    operation_summary="List orders",
+    operation_description=(
+        "Admin → can view all orders.\n"
+        "Buyer → can view only their orders.\n"
+        "Seller → can view orders related to their services."
+    ),
+    responses={200: OrderSerializer(many=True)}
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    def perform_create(self, serializer):
+        role = self.get_user_role()
+        user = self.request.user
+        if role in ["BUYER","ADMIN"] or user.is_staff:
             serializer.save(
                 buyer=user,
-                seller=service.seller
-            )
-        elif role == "ADMIN" or user.is_staff:
-            serializer.save(
-                buyer=user,
-                seller=service.seller
+                seller=serializer.validated_data["service"].seller
             )
         else:
             raise serializers.ValidationError("Only buyers and admins can place orders.")
 
-    def get_queryset(self):
-        user = self.request.user
-        role = getattr(user, "role", "").upper()
-
-        if user.is_staff or role == "ADMIN":
-            return Order.objects.all()
-        if role == "BUYER":
-            return Order.objects.filter(buyer=user)
-        if role == "SELLER":
-            return Order.objects.filter(seller=user)
-        return Order.objects.none()
-
     def partial_update(self, request, *args, **kwargs):
+        """Check if user can modify the given order based on role."""
         order = self.get_object()
-        if request.user != order.seller and not request.user.is_superuser:
-            return Response({'error': 'Permission denied'}, status=403)
+        user_actions = self.can_user_modify_order(order)
+        new_status = request.data.get("status")
+        allowed_status = ['PENDING','APPROVED','CANCELLED','COMPLETED']
 
-        new_status = request.data.get('status')
-        if new_status not in ['PENDING', 'APPROVED', 'CANCELLED']:
-            return Response({'error': 'Invalid status'}, status=400)
+        if new_status not in allowed_status:
+            return Response({'error':'Invalid status'}, status=400)
 
-        order.status = new_status
-        order.save()
-        serializer = self.get_serializer(order)
-        return Response(serializer.data)
+        # Buyer can cancel
+        if user_actions["is_buyer"]:
+            if new_status=="CANCELLED":
+                order.status = new_status
+                order.save()
+                return Response(self.get_serializer(order).data)
+            return Response({'error':'Buyer can only cancel'}, status=403)
 
-    def destroy(self, request, *args, **kwargs):
-        order = self.get_object()
-        if not request.user.is_superuser:
-            return Response({'error': 'Only admin can delete'}, status=403)
-        order.delete()
-        return Response({'success': 'Order deleted'})
+        # Seller can update
+        if user_actions["is_seller"] or user_actions["is_admin"]:
+            order.status = new_status
+            order.save()
+            return Response(self.get_serializer(order).data)
 
+        return Response({'error':'Permission denied'}, status=403)
