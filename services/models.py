@@ -1,5 +1,6 @@
 from django.db import models
 from uuid import uuid4
+from cloudinary.models import CloudinaryField
 from django.contrib.auth import get_user_model
 from services.validators import validate_file_size
 from django.core.validators import MinValueValidator, MaxValueValidator, FileExtensionValidator
@@ -35,7 +36,8 @@ class Service(models.Model):
 class ServiceImage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
     service = models.ForeignKey(Service, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to="products/images/",validators=[validate_file_size])
+    # image = models.ImageField(upload_to="products/images/",validators=[validate_file_size])
+    image = CloudinaryField('image')
 
 class ServiceReview(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4, editable=False)
