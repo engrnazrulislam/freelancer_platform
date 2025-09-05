@@ -73,7 +73,8 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'freelancer_platform.wsgi.application'
+# WSGI_APPLICATION = 'freelancer_platform.wsgi.application'
+WSGI_APPLICATION = 'freelancer_platform.wsgi.app'
 
 
 # Database
