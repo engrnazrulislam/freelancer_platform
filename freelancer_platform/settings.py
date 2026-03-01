@@ -15,6 +15,7 @@ SECRET_KEY = 'django-insecure-(c0cr=1q&71lll$^wrhvd7#2yg#ibrbj&4pjf-qmbl^9(joux-
 # SECURITY WARNING: don't run with debug turned on in production!
 # DEBUG = True
 DEBUG = False
+AUTH_USER_MODEL = 'users.User'
 
 ALLOWED_HOSTS = ['.vercel.app', '127.0.0.1']
 
@@ -32,6 +33,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'rest_framework',
     'django_filters',
+    'corsheaders',
     'djoser',
     'api',
     'users',
@@ -43,6 +45,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
@@ -75,6 +78,11 @@ TEMPLATES = [
 
 # WSGI_APPLICATION = 'freelancer_platform.wsgi.application'
 WSGI_APPLICATION = 'freelancer_platform.wsgi.app'
+
+CORS_ALLOWED_ORIGINS=[
+    'http://localhost:5173',
+    'https://freelancer-desk.vercel.app'
+]
 
 
 # Database
@@ -170,6 +178,9 @@ SIMPLE_JWT = {
 }
 
 DJOSER = {
+    'EMAIL_FRONTEND_PROTOCOL': config('FRONTEND_PROTOCOL'),
+    'EMAIL_FRONTEND_DOMAIN': config('FRONTEND_DOMAIN'),
+    'EMAIL_FRONTEND_SITE_NAME': 'Freelancer',
     'PASSWORD_RESET_CONFIRM_URL': 'password/reset/confirm/{uid}/{token}',
     'ACTIVATION_URL': 'activate/{uid}/{token}',
     'SEND_ACTIVATION_EMAIL':True,
