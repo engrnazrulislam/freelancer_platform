@@ -3,7 +3,30 @@ from orders.models import Order
 from services.models import Service, ServiceReview
 from orders.serializers import OrderSerializer
 from services.serializers import ServiceReviewSerializer
+from django.contrib.auth import get_user_model
+from rest_framework import serializers
 
+User = get_user_model()
+
+
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    profile_image = serializers.ImageField(required=False)
+
+    class Meta:
+        model = User
+        fields = [
+            "first_name",
+            "last_name",
+            "address",
+            "phone_number",
+            "profile_image",
+        ]
+        extra_kwargs = {
+            "first_name": {"required": False},
+            "last_name": {"required": False},
+            "address": {"required": False},
+            "phone_number": {"required": False},
+        }
 
 class SellerServiceSerializer(serializers.ModelSerializer):
     class Meta:

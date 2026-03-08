@@ -15,9 +15,15 @@ class User(AbstractUser):
     ROLE_CHOICES = (
         (SELLER, 'Seller'),
         (BUYER, 'Buyer'),
+        (ADMIN, 'Admin'),
     )
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, blank=True, null=True)
-
+    
+    profile_image = models.ImageField(
+        upload_to='profiles/',
+        null=True,
+        blank=True
+    )
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
     objects = CustomUserManager()

@@ -9,8 +9,21 @@ from orders.models import Order
 from dashboard import serializers
 from users.serializers import UserSerializer
 from django.contrib.auth import get_user_model
+from rest_framework.parsers import MultiPartParser, FormParser
+from .serializers import UserProfileUpdateSerializer
 
 User = get_user_model()
+
+class ProfileViewSet(viewsets.ModelViewSet):
+    serializer_class = UserProfileUpdateSerializer
+    permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_queryset(self):
+        return User.objects.filter(id=self.request.user.id)
+
+    def get_object(self):
+        return self.request.user
 
 # Seller Dashboard
 class SellerDashboardViewSet(viewsets.ReadOnlyModelViewSet):

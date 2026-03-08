@@ -16,6 +16,7 @@ from dashboard.views import (
     BuyerDashboardViewSet,
     SellerProfileViewSet,
     BuyerProfileViewSet,
+    ProfileViewSet,
 )
 from orders.views import OrderViewSet
 router = DefaultRouter()
@@ -23,6 +24,7 @@ router = DefaultRouter()
 router.register('services', ServiceViewSet, basename='services')
 router.register('categories',CategoryViewSet, basename='categories')
 router.register('orders', OrderViewSet, basename='orders')
+router.register("profile", ProfileViewSet, basename="profile")
 #Seller Routers
 router.register("seller/dashboard", SellerDashboardViewSet, basename="seller-dashboard")
 router.register("seller/profile", SellerProfileViewSet, basename="seller-profile")

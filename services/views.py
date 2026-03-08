@@ -138,18 +138,20 @@ class CategoryViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         if self.request.method in ['POST', 'PUT', 'PATCH', 'DELETE']:
-            return [permissions.IsAdminUser()]
+            return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
+
     @swagger_auto_schema(
-        operation_summary="List reviews for a service"
+        operation_summary="List all categories",
+        responses={200: CategorySerializer(many=True)}
     )
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
 
     @swagger_auto_schema(
-        operation_summary="Add a review for a service",
-        request_body=ServiceReviewSerializer,
-        responses={201: ServiceReviewSerializer, 400: "Bad Request"}
+        operation_summary="Create new category",
+        request_body=CategorySerializer,
+        responses={201: CategorySerializer}
     )
     def create(self, request, *args, **kwargs):
         return super().create(request, *args, **kwargs)
